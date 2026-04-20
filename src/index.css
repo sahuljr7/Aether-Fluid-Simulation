@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@1,400;1,700&family=JetBrains+Mono:wght@300;400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", serif;
+  --font-mono: "SF Mono", "Fira Code", "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  background-color: #000;
+  color: #fff;
+  overflow: hidden;
+  height: 100dvh;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  touch-action: none;
+  height: 100dvh;
+  position: fixed; /* Prevent bouncy scrolling on iOS */
+  width: 100%;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+.text-glow {
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.atmosphere-glow {
+  @apply fixed inset-0 opacity-20 pointer-events-none;
+  background: radial-gradient(circle at 50% 50%, rgba(20, 20, 20, 0.4) 0%, transparent 100%);
+}
+
+.btn-minimal {
+  @apply bg-white/5 border border-white/10 text-white/40 font-mono text-[10px] tracking-widest uppercase px-4 py-3 rounded-[4px] transition-all duration-200 hover:bg-white/10 hover:text-white/80 active:scale-95;
+  /* Ensure min touch target of 44px on mobile while keeping visual size small */
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

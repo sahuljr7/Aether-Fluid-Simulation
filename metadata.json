@@ -1,0 +1,6 @@
+{
+  "name": "Aether Fluid Simulation",
+  "description": "A high-performance WebGL2 fluid dynamics simulation featuring real-time advection, pressure solving, and interactive multi-touch splats.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
