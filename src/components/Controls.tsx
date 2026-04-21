@@ -9,11 +9,12 @@ interface ControlsProps {
   setConfig: (config: FluidConfig) => void;
   interacted: boolean;
   onScreenshot: () => void;
+  onReset: () => void;
   activePoints: number;
   onFeedbackSplat: () => void;
 }
 
-export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacted, onScreenshot, activePoints, onFeedbackSplat }) => {
+export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacted, onScreenshot, onReset, activePoints, onFeedbackSplat }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [activeProfile, setActiveProfile] = useState(sound.getProfileName());
 
@@ -35,7 +36,8 @@ export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacte
       {/* Top Label & Stats */}
       <div className="pt-[env(safe-area-inset-top,0px)] flex flex-col items-center gap-2">
         <span 
-          className={`font-mono font-semibold text-[10px] md:text-[11px] leading-none tracking-[5px] md:tracking-[7px] uppercase text-white/20 transition-opacity duration-[2000ms] ${interacted ? 'opacity-0' : 'opacity-100'}`}
+          className={`font-mono font-semibold text-[11px] leading-none tracking-[6px] uppercase text-white/20 transition-opacity duration-[2000ms] ${interacted ? 'opacity-0' : 'opacity-100'}`}
+          style={{ fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace" }}
         >
           fluid &nbsp;/&nbsp; webgl2
         </span>
@@ -47,7 +49,8 @@ export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacte
       {/* Middle Hint */}
       <div className="flex flex-col items-center text-center px-6">
         <span 
-          className={`font-mono font-light text-[9px] md:text-[10px] leading-none tracking-[3px] md:tracking-[5px] uppercase text-white/25 transition-opacity duration-[2000ms] ${interacted ? 'opacity-0' : 'opacity-100'}`}
+          className={`font-mono font-light text-[10px] leading-none tracking-[4px] uppercase text-white/25 transition-opacity duration-[2000ms] ${interacted ? 'opacity-0' : 'opacity-100'}`}
+          style={{ fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace" }}
         >
           drag &middot; touch &middot; paint
         </span>
@@ -164,7 +167,15 @@ export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacte
           </button>
 
           <button 
-            className="btn-minimal px-6 min-w-[100px]"
+            className="btn-minimal px-6 min-w-[90px]"
+            onClick={onReset}
+            aria-label="Reset simulation"
+          >
+            reset
+          </button>
+
+          <button 
+            className="btn-minimal px-6 min-w-[90px]"
             onClick={() => updateConfig('PAUSED', !config.PAUSED)}
             aria-label={config.PAUSED ? 'Play simulation' : 'Pause simulation'}
           >

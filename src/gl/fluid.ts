@@ -347,6 +347,10 @@ export class FluidSimulation {
     this.drawQuad(null);
   }
 
+  public reset() {
+    this.initFBOs();
+  }
+
   public screenshot() {
     this.render();
     const link = document.createElement('a');

@@ -43,6 +43,7 @@ export default function App() {
         setConfig={setConfig} 
         interacted={interacted}
         onScreenshot={() => canvasRef.current?.screenshot()}
+        onReset={() => canvasRef.current?.reset()}
         activePoints={activePoints}
         onFeedbackSplat={() => canvasRef.current?.triggerFeedbackSplat()}
       />

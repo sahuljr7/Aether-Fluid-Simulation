@@ -13,6 +13,7 @@ export interface FluidCanvasHandle {
   screenshot: () => void;
   getActiveCount: () => number;
   triggerFeedbackSplat: () => void;
+  reset: () => void;
 }
 
 const PALETTES = [
@@ -43,8 +44,39 @@ export const FluidCanvas = forwardRef<FluidCanvasHandle, FluidCanvasProps>(({ co
       const w = canvasRef.current.clientWidth;
       const h = canvasRef.current.clientHeight;
       simRef.current.splat(w / 2, h / 2, 0, 0, getNextColor(0.8));
+    },
+    reset: () => {
+      if (!simRef.current) return;
+      simRef.current.reset();
+      triggerInitialSplash();
     }
   }));
+
+  const triggerInitialSplash = () => {
+    if (!simRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const sim = simRef.current;
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    const cx = w * 0.5;
+    const cy = h * 0.5;
+    const r = Math.min(w, h) * 0.22;
+    const ga = 137.508 * (Math.PI / 180);
+    
+    sound.playSplat();
+
+    for (let i = 0; i < 10; i++) {
+      const angle = i * ga;
+      const radius = Math.sqrt(i + 1) * r * 0.35;
+      const x = cx + radius * Math.cos(angle);
+      const y = cy + radius * Math.sin(angle);
+      const speed = config.SPLAT_FORCE * 0.45;
+      const vx = Math.cos(angle + Math.PI * 0.5) * speed;
+      const vy = Math.sin(angle + Math.PI * 0.5) * speed;
+      sim.splat(x, y, vx, vy, getNextColor(0.38));
+    }
+    lastAutoRef.current = performance.now();
+  };
 
   const getNextColor = (scale = 0.38): [number, number, number] => {
     const palette = PALETTES[activePaletteIdx];
@@ -95,30 +127,7 @@ export const FluidCanvas = forwardRef<FluidCanvasHandle, FluidCanvasProps>(({ co
       sim.splat(x, y, Math.cos(a) * f, Math.sin(a) * f, getNextColor(scale));
     };
 
-    const initialSplash = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const cx = w * 0.5;
-      const cy = h * 0.5;
-      const r = Math.min(w, h) * 0.22;
-      const ga = 137.508 * (Math.PI / 180);
-      
-      // Play a startup splat sound
-      sound.playSplat();
-
-      for (let i = 0; i < 10; i++) {
-        const angle = i * ga;
-        const radius = Math.sqrt(i + 1) * r * 0.35;
-        const x = cx + radius * Math.cos(angle);
-        const y = cy + radius * Math.sin(angle);
-        const speed = config.SPLAT_FORCE * 0.45;
-        const vx = Math.cos(angle + Math.PI * 0.5) * speed;
-        const vy = Math.sin(angle + Math.PI * 0.5) * speed;
-        sim.splat(x, y, vx, vy, getNextColor(0.38));
-      }
-    };
-
-    const splashTimeout = setTimeout(initialSplash, 200);
+    const splashTimeout = setTimeout(triggerInitialSplash, 200);
 
     const loop = (time: number) => {
       const dt = Math.min((time - lastTimeRef.current) / 1000, 0.0167);
