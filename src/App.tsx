@@ -44,6 +44,7 @@ export default function App() {
         interacted={interacted}
         onScreenshot={() => canvasRef.current?.screenshot()}
         activePoints={activePoints}
+        onFeedbackSplat={() => canvasRef.current?.triggerFeedbackSplat()}
       />
     </main>
   );

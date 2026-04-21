@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useRef, useImperativeHandle, forwardRef, useState } from 'react';
 import { FluidSimulation, FluidConfig } from '../gl/fluid';
 import { sound } from '../services/sound';
 
@@ -6,29 +6,53 @@ interface FluidCanvasProps {
   config: FluidConfig;
   onFpsUpdate?: (fps: number) => void;
   onInteraction?: () => void;
+  onManualSplat?: (x: number, y: number) => void;
 }
 
 export interface FluidCanvasHandle {
   screenshot: () => void;
   getActiveCount: () => number;
+  triggerFeedbackSplat: () => void;
 }
 
-export const FluidCanvas = forwardRef<FluidCanvasHandle, FluidCanvasProps>(({ config, onFpsUpdate, onInteraction }, ref) => {
+const PALETTES = [
+  { name: 'Cycle', colors: null },
+  { name: 'Azure', colors: [[0.0, 0.4, 0.8], [0.1, 0.6, 0.9], [0.0, 0.2, 0.6]] },
+  { name: 'Magma', colors: [[0.8, 0.2, 0.0], [0.9, 0.4, 0.1], [0.6, 0.1, 0.0]] },
+  { name: 'Forest', colors: [[0.1, 0.6, 0.2], [0.2, 0.8, 0.4], [0.0, 0.4, 0.1]] },
+  { name: 'Cyber', colors: [[0.8, 0.0, 0.8], [0.4, 0.0, 0.9], [0.0, 0.8, 0.9]] },
+];
+
+export const FluidCanvas = forwardRef<FluidCanvasHandle, FluidCanvasProps>(({ config, onFpsUpdate, onInteraction, onManualSplat }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const simRef = useRef<FluidSimulation | null>(null);
   const frameRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const lastAutoRef = useRef<number>(0);
   const hueRef = useRef<number>(Math.random());
+  const [activePaletteIdx, setActivePaletteIdx] = useState(0);
   
   const ptrsRef = useRef<Map<number, { x: number; y: number; color: [number, number, number] }>>(new Map());
 
   useImperativeHandle(ref, () => ({
     screenshot: () => simRef.current?.screenshot(),
     getActiveCount: () => simRef.current?.getActiveCount() || 0,
+    triggerFeedbackSplat: () => {
+      if (!simRef.current || !canvasRef.current) return;
+      sound.playSplat();
+      const w = canvasRef.current.clientWidth;
+      const h = canvasRef.current.clientHeight;
+      simRef.current.splat(w / 2, h / 2, 0, 0, getNextColor(0.8));
+    }
   }));
 
   const getNextColor = (scale = 0.38): [number, number, number] => {
+    const palette = PALETTES[activePaletteIdx];
+    if (palette.colors) {
+      const c = palette.colors[Math.floor(Math.random() * palette.colors.length)];
+      return [c[0] * scale * 2.5, c[1] * scale * 2.5, c[2] * scale * 2.5];
+    }
+
     hueRef.current = (hueRef.current + 0.618033988749895) % 1.0;
     const h6 = hueRef.current * 6;
     const i = Math.floor(h6);
@@ -78,6 +102,10 @@ export const FluidCanvas = forwardRef<FluidCanvasHandle, FluidCanvasProps>(({ co
       const cy = h * 0.5;
       const r = Math.min(w, h) * 0.22;
       const ga = 137.508 * (Math.PI / 180);
+      
+      // Play a startup splat sound
+      sound.playSplat();
+
       for (let i = 0; i < 10; i++) {
         const angle = i * ga;
         const radius = Math.sqrt(i + 1) * r * 0.35;
@@ -154,13 +182,45 @@ export const FluidCanvas = forwardRef<FluidCanvasHandle, FluidCanvasProps>(({ co
   };
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 w-full h-full bg-black touch-none cursor-crosshair"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-    />
+    <div className="fixed inset-0 w-full h-full">
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full bg-black touch-none cursor-crosshair"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      />
+      
+      {/* Floating Color Palette */}
+      <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-3 pointer-events-auto">
+        {PALETTES.map((p, idx) => (
+          <button
+            key={p.name}
+            id={`palette-btn-${p.name.toLowerCase()}`}
+            onClick={() => setActivePaletteIdx(idx)}
+            className={`group relative flex items-center justify-center w-10 h-10 rounded-full border transition-all duration-500 ${
+              activePaletteIdx === idx 
+                ? 'border-white bg-white/10 scale-110' 
+                : 'border-white/10 bg-black/20 hover:border-white/30'
+            }`}
+            title={p.name}
+          >
+            <div 
+              className={`w-3 h-3 rounded-full transition-transform duration-500 ${activePaletteIdx === idx ? 'scale-125 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'scale-100'}`}
+              style={{ 
+                background: p.colors 
+                  ? `linear-gradient(45deg, rgb(${p.colors[0][0]*255},${p.colors[0][1]*255},${p.colors[0][2]*255}), rgb(${p.colors[1][0]*255},${p.colors[1][1]*255},${p.colors[1][2]*255}))` 
+                  : 'conic-gradient(from 0deg, red, yellow, green, cyan, blue, magenta, red)' 
+              }}
+            />
+            {/* Label on hover */}
+            <span className="absolute right-12 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none font-mono text-[9px] tracking-widest uppercase text-white/40 whitespace-nowrap">
+              {p.name}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 });

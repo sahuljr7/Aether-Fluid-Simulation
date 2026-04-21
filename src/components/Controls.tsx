@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FluidConfig } from '../gl/fluid';
+import { sound } from '../services/sound';
 import { motion, AnimatePresence } from 'motion/react';
-import { Settings, Camera, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { Settings, Camera, X, Waves, Volume2, Sparkles } from 'lucide-react';
 
 interface ControlsProps {
   config: FluidConfig;
@@ -9,13 +10,24 @@ interface ControlsProps {
   interacted: boolean;
   onScreenshot: () => void;
   activePoints: number;
+  onFeedbackSplat: () => void;
 }
 
-export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacted, onScreenshot, activePoints }) => {
+export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacted, onScreenshot, activePoints, onFeedbackSplat }) => {
   const [showSettings, setShowSettings] = useState(false);
+  const [activeProfile, setActiveProfile] = useState(sound.getProfileName());
 
   const updateConfig = (key: keyof FluidConfig, value: any) => {
     setConfig({ ...config, [key]: value });
+    if (key === 'SPLAT_FORCE') {
+      onFeedbackSplat();
+    }
+  };
+
+  const handleProfileChange = (profile: string) => {
+    sound.setProfile(profile);
+    setActiveProfile(profile);
+    onFeedbackSplat();
   };
 
   return (
@@ -47,16 +59,53 @@ export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacte
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="pointer-events-auto bg-black/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl w-full max-w-sm flex flex-col gap-5"
+            className="pointer-events-auto bg-black/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl w-full max-w-sm flex flex-col gap-6"
           >
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs tracking-widest uppercase text-white/40">Parameters</span>
+              <span className="font-mono text-xs tracking-widest uppercase text-white/40">Simulation</span>
               <button onClick={() => setShowSettings(false)} className="text-white/40 hover:text-white transition-colors">
                 <X size={16} />
               </button>
             </div>
 
-            <div className="grid gap-4 overflow-y-auto max-h-[40vh] pr-2 scrollbar-hide">
+            {/* Sound Profiles */}
+            <div className="flex flex-col gap-3">
+              <span className="font-mono text-[9px] tracking-[2px] uppercase text-white/25">Sound Profiles</span>
+              <div className="grid grid-cols-3 gap-2">
+                {['Calm', 'Vibrant', 'Minimal'].map(p => (
+                  <button
+                    key={p}
+                    onClick={() => handleProfileChange(p)}
+                    className={`font-mono text-[10px] py-2 rounded-lg border transition-all ${
+                      activeProfile === p 
+                        ? 'border-white/40 bg-white/5 text-white' 
+                        : 'border-white/5 text-white/30 hover:border-white/20'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-4 overflow-y-auto max-h-[35vh] pr-2 scrollbar-hide">
+              {/* Trails Toggle */}
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-white/30" />
+                  <span className="font-mono text-[10px] tracking-widest text-white/30 uppercase">Particle Trails</span>
+                </div>
+                <button 
+                  onClick={() => updateConfig('TRAILS', !config.TRAILS)}
+                  className={`w-8 h-4 rounded-full relative transition-colors ${config.TRAILS ? 'bg-white/40' : 'bg-white/5'}`}
+                >
+                  <motion.div 
+                    animate={{ x: config.TRAILS ? 16 : 2 }}
+                    className="absolute top-1 w-2 h-2 bg-white rounded-full"
+                  />
+                </button>
+              </div>
+
               {[
                 { label: 'Viscosity', key: 'VELOCITY_DISSIPATION', min: 0.9, max: 1.0, step: 0.001 },
                 { label: 'Dissipation', key: 'DENSITY_DISSIPATION', min: 0.9, max: 0.999, step: 0.001 },

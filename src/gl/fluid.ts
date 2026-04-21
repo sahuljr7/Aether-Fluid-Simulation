@@ -14,6 +14,7 @@ export interface FluidConfig {
   SPLAT_RADIUS: number;
   SPLAT_FORCE: number;
   BLOOM: number;
+  TRAILS: boolean;
   PAUSED: boolean;
 }
 
@@ -28,6 +29,7 @@ export const DEFAULT_CONFIG: FluidConfig = {
   SPLAT_RADIUS: 0.0022,
   SPLAT_FORCE: 5500,
   BLOOM: 2.2,
+  TRAILS: false,
   PAUSED: false,
 };
 
@@ -42,6 +44,7 @@ export class FluidSimulation {
     pressure: DoubleFBO;
     divergence: FBO;
     curl: FBO;
+    trails: DoubleFBO;
   } = {} as any;
 
   private quadVAO!: WebGLVertexArrayObject;
@@ -134,6 +137,7 @@ export class FluidSimulation {
 
     this.fbos.velocity = new DoubleFBO(gl, sR.w, sR.h, this.formats.RG.ifmt, this.formats.RG.fmt, this.formats.RG.type, filter);
     this.fbos.dye = new DoubleFBO(gl, dR.w, dR.h, this.formats.RGBA.ifmt, this.formats.RGBA.fmt, this.formats.RGBA.type, filter);
+    this.fbos.trails = new DoubleFBO(gl, dR.w, dR.h, this.formats.RGBA.ifmt, this.formats.RGBA.fmt, this.formats.RGBA.type, filter);
     this.fbos.pressure = new DoubleFBO(gl, sR.w, sR.h, this.formats.R.ifmt, this.formats.R.fmt, this.formats.R.type, gl.NEAREST);
     this.fbos.divergence = createFBO(gl, sR.w, sR.h, this.formats.R.ifmt, this.formats.R.fmt, this.formats.R.type, gl.NEAREST);
     this.fbos.curl = createFBO(gl, sR.w, sR.h, this.formats.R.ifmt, this.formats.R.fmt, this.formats.R.type, gl.NEAREST);
@@ -189,6 +193,12 @@ export class FluidSimulation {
     gl.bindTexture(gl.TEXTURE_2D, this.fbos.dye.read.texture);
     this.drawQuad(this.fbos.dye.write);
     this.fbos.dye.swap();
+
+    if (this.config.TRAILS) {
+      gl.bindTexture(gl.TEXTURE_2D, this.fbos.trails.read.texture);
+      this.drawQuad(this.fbos.trails.write);
+      this.fbos.trails.swap();
+    }
   }
 
   public step(dt: number) {
@@ -297,6 +307,21 @@ export class FluidSimulation {
     gl.uniform1f(advectProg.getUniformLocation('uDiss'), this.config.DENSITY_DISSIPATION);
     this.drawQuad(this.fbos.dye.write);
     this.fbos.dye.swap();
+
+    // 9. Accumulate Trails (persistence)
+    if (this.config.TRAILS) {
+      advectProg.use();
+      gl.uniform2fv(advectProg.getUniformLocation('uVTexel'), sT);
+      gl.uniform2fv(advectProg.getUniformLocation('uSTexel'), dT);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this.fbos.velocity.read.texture);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, this.fbos.trails.read.texture);
+      gl.uniform1f(advectProg.getUniformLocation('uDt'), dt);
+      gl.uniform1f(advectProg.getUniformLocation('uDiss'), 0.992); // Slow decay for trails
+      this.drawQuad(this.fbos.trails.write);
+      this.fbos.trails.swap();
+    }
   }
 
   public render() {
@@ -307,7 +332,8 @@ export class FluidSimulation {
     dispProg.use();
     gl.uniform2fv(dispProg.getUniformLocation('uTexel'), dR);
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this.fbos.dye.read.texture);
+    const tex = this.config.TRAILS ? this.fbos.trails.read.texture : this.fbos.dye.read.texture;
+    gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.uniform1i(dispProg.getUniformLocation('uTex'), 0);
     
     // Add velocity texture for dynamic scaling

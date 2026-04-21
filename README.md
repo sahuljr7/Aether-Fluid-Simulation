@@ -34,3 +34,4 @@ We maintain a running log of all major architectural additions and features in t
 - [Minimalist Responsive HUD](./features/03-responsive-hud.md)
 - [Advanced Simulation Controls](./features/04-advanced-controls.md)
 - [Dynamic Scaling & Media Capture](./features/05-dynamic-scaling-and-capture.md)
+- [Customization & Immersive Profiles](./features/06-customization-and-profiles.md)
