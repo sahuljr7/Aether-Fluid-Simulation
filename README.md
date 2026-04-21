@@ -1,20 +1,34 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Aether // Fluid Simulation
 
-# Run and deploy your AI Studio app
+A high-performance, aesthetically-driven 2D fluid simulation built with WebGL2 and React. Inspired by the Stable Fluids method, Aether combines real-time physics with cinematic rendering and procedural audio to create a meditative interactive experience.
 
-This contains everything you need to run your app locally.
+## ✨ Features
 
-View your app in AI Studio: https://ai.studio/apps/dfecb134-e803-41d3-9ebd-59e894493945
+- **High-Fidelity Physics**: Real-time Navier-Stokes solver using WebGL2 fragment shaders.
+- **Cinematic Rendering**: ACES Filmic tonemapping, gamma correction, and vibrant color processing.
+- **Procedural Audio**: Real-time sound synthesis that reacts to interaction velocity and touch.
+- **Responsive HUD**: Minimalist, mobile-first design with dynamic safe-area support.
+- **Interaction Alchemy**: Harmonic color generation using golden-ratio hue stepping.
 
-## Run Locally
+## 🚀 Interaction
 
-**Prerequisites:**  Node.js
+- **Touch / Mouse**: Drag or tap to inject velocity and color into the fluid.
+- **Responsive Layout**: The simulation automatically adjusts to screen orientation and size.
+- **Visual Hints**: Built-in instructions fade away once you start interacting, keeping the interface clean.
 
+## 🛠 Tech Stack
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- **Frontend**: React + TypeScript + Tailwind CSS
+- **Graphics**: WebGL2 (GLSL)
+- **Animation**: Framer Motion
+- **Audio**: Web Audio API (Procedural Synthesis)
+
+---
+
+## 📜 Feature Log
+
+We maintain a running log of all major architectural additions and features in the `/features` directory.
+
+- [Core Simulation Engine](./features/01-fluid-simulation.md)
+- [Procedural Audio Engine](./features/02-immersive-audio.md)
+- [Minimalist Responsive HUD](./features/03-responsive-hud.md)
