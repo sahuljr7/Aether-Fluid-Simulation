@@ -36,8 +36,8 @@ export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacte
       <div className="w-full flex flex-col-reverse md:flex-row items-center md:items-end justify-between gap-5 md:gap-6 pointer-events-none">
         {/* Footer Credit */}
         <div className="flex flex-col items-center md:items-start py-2">
-          <span className="font-mono text-[10px] md:text-[11px] tracking-[3px] uppercase text-white/25">
-            build with ♡ by Sahul
+          <span className="font-mono text-[9px] md:text-[10px] tracking-[3px] uppercase text-white/40 hover:text-white/60 transition-colors duration-500 cursor-default">
+            build with <span className="text-white/20">♡</span> by Sahul
           </span>
         </div>
 

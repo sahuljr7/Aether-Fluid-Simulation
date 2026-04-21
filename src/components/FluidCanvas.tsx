@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { FluidSimulation, FluidConfig } from '../gl/fluid';
+import { sound } from '../services/sound';
 
 interface FluidCanvasProps {
   config: FluidConfig;
@@ -118,6 +119,7 @@ export const FluidCanvas: React.FC<FluidCanvasProps> = ({ config, onFpsUpdate, o
 
   const handlePointerDown = (e: React.PointerEvent) => {
     onInteraction?.();
+    sound.playSplat();
     const color = getNextColor(0.35);
     ptrsRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY, color });
     simRef.current?.splat(e.clientX, e.clientY, 0, 0, color);
@@ -128,6 +130,11 @@ export const FluidCanvas: React.FC<FluidCanvasProps> = ({ config, onFpsUpdate, o
     if (!p || !simRef.current) return;
     const dx = (e.clientX - p.x) / canvasRef.current!.clientWidth * config.SPLAT_FORCE;
     const dy = (e.clientY - p.y) / canvasRef.current!.clientHeight * config.SPLAT_FORCE;
+    
+    // Play subtle movement sound
+    const velocity = Math.sqrt(dx * dx + dy * dy) / config.SPLAT_FORCE;
+    sound.playSlide(velocity);
+
     simRef.current.splat(e.clientX, e.clientY, dx, dy, p.color);
     p.x = e.clientX; p.y = e.clientY;
   };
