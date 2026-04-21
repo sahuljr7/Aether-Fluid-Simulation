@@ -142,12 +142,18 @@ void main(){
 export const DISPLAY_FRAG = `#version 300 es
 precision highp float;
 in vec2 vUv;
-uniform sampler2D uTex;
+uniform sampler2D uTex, uVel;
+uniform float uBloom;
 out vec4 fragColor;
 void main(){
   vec3 c = texture(uTex, vUv).rgb;
+  vec2 v = texture(uVel, vUv).xy;
+  float vel = length(v);
+  
+  // Dynamic scaling based on velocity
+  c *= (1.0 + vel * 0.4);
 
-  c *= 2.2;
+  c *= uBloom;
   c  = c / (c + 1.0);
 
   c  = mix(c * c * (3.0 - 2.0*c), c, 0.38);

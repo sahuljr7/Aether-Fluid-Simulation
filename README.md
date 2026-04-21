@@ -32,3 +32,5 @@ We maintain a running log of all major architectural additions and features in t
 - [Core Simulation Engine](./features/01-fluid-simulation.md)
 - [Procedural Audio Engine](./features/02-immersive-audio.md)
 - [Minimalist Responsive HUD](./features/03-responsive-hud.md)
+- [Advanced Simulation Controls](./features/04-advanced-controls.md)
+- [Dynamic Scaling & Media Capture](./features/05-dynamic-scaling-and-capture.md)

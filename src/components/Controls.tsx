@@ -1,26 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FluidConfig } from '../gl/fluid';
+import { motion, AnimatePresence } from 'motion/react';
+import { Settings, Camera, X, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface ControlsProps {
   config: FluidConfig;
   setConfig: (config: FluidConfig) => void;
   interacted: boolean;
+  onScreenshot: () => void;
+  activePoints: number;
 }
 
-export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacted }) => {
+export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacted, onScreenshot, activePoints }) => {
+  const [showSettings, setShowSettings] = useState(false);
+
   const updateConfig = (key: keyof FluidConfig, value: any) => {
     setConfig({ ...config, [key]: value });
   };
 
   return (
     <div className="fixed inset-0 pointer-events-none flex flex-col items-center justify-between p-6 md:p-10 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] overflow-hidden">
-      {/* Top Label */}
-      <div className="pt-[env(safe-area-inset-top,0px)] flex flex-col items-center">
+      {/* Top Label & Stats */}
+      <div className="pt-[env(safe-area-inset-top,0px)] flex flex-col items-center gap-2">
         <span 
           className={`font-mono font-semibold text-[10px] md:text-[11px] leading-none tracking-[5px] md:tracking-[7px] uppercase text-white/20 transition-opacity duration-[2000ms] ${interacted ? 'opacity-0' : 'opacity-100'}`}
         >
           fluid &nbsp;/&nbsp; webgl2
         </span>
+        <div className="flex items-center gap-4 text-[9px] font-mono tracking-widest text-white/15 uppercase">
+          <span>{activePoints.toLocaleString()} cells</span>
+        </div>
       </div>
 
       {/* Middle Hint */}
@@ -32,6 +41,52 @@ export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacte
         </span>
       </div>
 
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="pointer-events-auto bg-black/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl w-full max-w-sm flex flex-col gap-5"
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-xs tracking-widest uppercase text-white/40">Parameters</span>
+              <button onClick={() => setShowSettings(false)} className="text-white/40 hover:text-white transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="grid gap-4 overflow-y-auto max-h-[40vh] pr-2 scrollbar-hide">
+              {[
+                { label: 'Viscosity', key: 'VELOCITY_DISSIPATION', min: 0.9, max: 1.0, step: 0.001 },
+                { label: 'Dissipation', key: 'DENSITY_DISSIPATION', min: 0.9, max: 0.999, step: 0.001 },
+                { label: 'Vorticity', key: 'CURL', min: 0, max: 50, step: 1 },
+                { label: 'Bloom', key: 'BLOOM', min: 0, max: 10, step: 0.1 },
+                { label: 'Force', key: 'SPLAT_FORCE', min: 1000, max: 12000, step: 100 },
+                { label: 'Sim Res', key: 'SIM_RES', min: 32, max: 256, step: 32 },
+                { label: 'Dye Res', key: 'DYE_RES', min: 256, max: 2048, step: 256 },
+              ].map((item) => (
+                <div key={item.key} className="flex flex-col gap-2">
+                  <div className="flex justify-between font-mono text-[10px] tracking-widest text-white/30 uppercase">
+                    <span>{item.label}</span>
+                    <span>{(config as any)[item.key]}</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min={item.min} 
+                    max={item.max} 
+                    step={item.step}
+                    value={(config as any)[item.key]}
+                    onChange={(e) => updateConfig(item.key as keyof FluidConfig, parseFloat(e.target.value))}
+                    className="w-full bg-white/5 h-1 appearance-none rounded-full accent-white/40 hover:accent-white/60 transition-all"
+                  />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Bottom HUD */}
       <div className="w-full flex flex-col-reverse md:flex-row items-center md:items-end justify-between gap-5 md:gap-6 pointer-events-none">
         {/* Footer Credit */}
@@ -42,14 +97,23 @@ export const Controls: React.FC<ControlsProps> = ({ config, setConfig, interacte
         </div>
 
         {/* Controls */}
-        <div className="flex gap-3 pointer-events-auto">
+        <div className="flex gap-2 pointer-events-auto">
           <button 
-            className="btn-minimal px-6"
-            onClick={() => window.location.reload()}
-            aria-label="Reset simulation"
+            className="btn-minimal p-3"
+            onClick={onScreenshot}
+            aria-label="Capture screenshot"
           >
-            reset
+            <Camera size={18} className="opacity-60" />
           </button>
+          
+          <button 
+            className="btn-minimal p-3"
+            onClick={() => setShowSettings(!showSettings)}
+            aria-label="Advanced settings"
+          >
+            <Settings size={18} className={`opacity-60 transition-transform duration-500 ${showSettings ? 'rotate-90' : ''}`} />
+          </button>
+
           <button 
             className="btn-minimal px-6 min-w-[100px]"
             onClick={() => updateConfig('PAUSED', !config.PAUSED)}

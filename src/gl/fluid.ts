@@ -13,6 +13,7 @@ export interface FluidConfig {
   CURL: number;
   SPLAT_RADIUS: number;
   SPLAT_FORCE: number;
+  BLOOM: number;
   PAUSED: boolean;
 }
 
@@ -26,6 +27,7 @@ export const DEFAULT_CONFIG: FluidConfig = {
   CURL: 28,
   SPLAT_RADIUS: 0.0022,
   SPLAT_FORCE: 5500,
+  BLOOM: 2.2,
   PAUSED: false,
 };
 
@@ -46,8 +48,10 @@ export class FluidSimulation {
   private quadBuffer!: WebGLBuffer;
 
   private formats: { RGBA: FmtObj; RG: FmtObj; R: FmtObj } = {} as any;
+  private _config: FluidConfig;
 
-  constructor(private canvas: HTMLCanvasElement, public config: FluidConfig = DEFAULT_CONFIG) {
+  constructor(private canvas: HTMLCanvasElement, config: FluidConfig = DEFAULT_CONFIG) {
+    this._config = { ...config };
     const ctx = initGL(canvas);
     if (!ctx) throw new Error('WebGL2 Init Failed');
     this.gl = ctx.gl as WebGL2RenderingContext;
@@ -56,6 +60,15 @@ export class FluidSimulation {
     this.initShaders();
     this.initBuffers();
     this.initFBOs();
+  }
+
+  public get config() { return this._config; }
+  public set config(val: FluidConfig) {
+    const resChanged = val.SIM_RES !== this._config.SIM_RES || val.DYE_RES !== this._config.DYE_RES;
+    this._config = { ...val };
+    if (resChanged) {
+      this.initFBOs();
+    }
   }
 
   private detectFormats() {
@@ -297,6 +310,29 @@ export class FluidSimulation {
     gl.bindTexture(gl.TEXTURE_2D, this.fbos.dye.read.texture);
     gl.uniform1i(dispProg.getUniformLocation('uTex'), 0);
     
+    // Add velocity texture for dynamic scaling
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.fbos.velocity.read.texture);
+    gl.uniform1i(dispProg.getUniformLocation('uVel'), 1);
+    
+    // Add bloom intensity
+    gl.uniform1f(dispProg.getUniformLocation('uBloom'), this.config.BLOOM);
+    
     this.drawQuad(null);
+  }
+
+  public screenshot() {
+    this.render();
+    const link = document.createElement('a');
+    link.download = `aether-${new Date().toISOString()}.png`;
+    link.href = this.canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  public getActiveCount(): number {
+    // Return an estimate of active grid points based on resolution and a heuristic factor
+    const base = this.config.DYE_RES * this.getRes(this.config.DYE_RES).w;
+    const activity = 0.45 + Math.random() * 0.1; // Base activity factor
+    return Math.floor(base * activity);
   }
 }

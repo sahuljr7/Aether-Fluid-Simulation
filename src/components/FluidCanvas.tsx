@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { FluidSimulation, FluidConfig } from '../gl/fluid';
 import { sound } from '../services/sound';
 
@@ -8,7 +8,12 @@ interface FluidCanvasProps {
   onInteraction?: () => void;
 }
 
-export const FluidCanvas: React.FC<FluidCanvasProps> = ({ config, onFpsUpdate, onInteraction }) => {
+export interface FluidCanvasHandle {
+  screenshot: () => void;
+  getActiveCount: () => number;
+}
+
+export const FluidCanvas = forwardRef<FluidCanvasHandle, FluidCanvasProps>(({ config, onFpsUpdate, onInteraction }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const simRef = useRef<FluidSimulation | null>(null);
   const frameRef = useRef<number>(0);
@@ -17,6 +22,11 @@ export const FluidCanvas: React.FC<FluidCanvasProps> = ({ config, onFpsUpdate, o
   const hueRef = useRef<number>(Math.random());
   
   const ptrsRef = useRef<Map<number, { x: number; y: number; color: [number, number, number] }>>(new Map());
+
+  useImperativeHandle(ref, () => ({
+    screenshot: () => simRef.current?.screenshot(),
+    getActiveCount: () => simRef.current?.getActiveCount() || 0,
+  }));
 
   const getNextColor = (scale = 0.38): [number, number, number] => {
     hueRef.current = (hueRef.current + 0.618033988749895) % 1.0;
@@ -153,4 +163,4 @@ export const FluidCanvas: React.FC<FluidCanvasProps> = ({ config, onFpsUpdate, o
       onPointerCancel={handlePointerUp}
     />
   );
-};
+});
